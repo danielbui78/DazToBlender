@@ -1,1 +1,0 @@
-"C:\Program Files\DAZ 3D\DAZStudio4\DAZStudio.exe" DzLoadScene.dsa 
