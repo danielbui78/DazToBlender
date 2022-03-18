@@ -22,7 +22,7 @@ def set_transform(obj,data,type):
     if type == "translate":
         transform = obj.location
     for i in range(3):
-        transform[i] = float(data[i])    
+        transform[i] = float(data[i])
 def progress_bar(percent):
     bpy.context.window_manager.progress_update(percent)
 
@@ -80,22 +80,31 @@ class ReadFbx:
     adr = ""
     index = 0
     my_meshs = []
+    dtu = None
 
-    def __init__(self,dir,i,int_progress):
-        self.dtu = DataBase.DtuLoader()
+    def __init__(self, dir, i, int_progress, arg_oDtu=None):
+        sFbxFilename="B_ENV.fbx";
+        if arg_oDtu is None:
+            self.dtu = DataBase.DtuLoader()
+        else:
+            self.dtu = arg_oDtu
+            sFbxFilename = self.dtu.dtu_dict["FBX File"]
         self.pose = Poses.Posing(self.dtu)
         self.dtb_shaders = DtbMaterial.DtbShaders(self.dtu)
         self.adr = dir
         self.my_meshs = []
         self.index = i
-        if self.read_fbx():
+        if self.read_fbx(sFbxFilename):
             progress_bar(int(i * int_progress)+int(int_progress / 2))
             self.setMaterial()
         Global.scale_settings()
 
-    def read_fbx(self):
+    def read_fbx(self, sFbxFilename):
+        if (sFbxFilename is None or sFbxFilename == ""):
+            print("DEBUG: Environment.py, ReadFbx.read_fbx() sFbxFilename is not set.")
+            return False
         self.my_meshs = []
-        adr = os.path.join(self.adr, "B_ENV.fbx")
+        adr = os.path.join(self.adr, sFbxFilename)
         if os.path.exists(adr) == False:
             return
         objs = self.convert_file(adr)
@@ -121,7 +130,7 @@ class ReadFbx:
         Global.deselect()
         if root.type == 'ARMATURE':
             self.import_as_armature(objs, root)
-        #TODO: Remove Groups with no MESH   
+        #TODO: Remove Groups with no MESH
         elif root.type == 'EMPTY':
             no_empty = False
             for o in objs:
@@ -135,10 +144,10 @@ class ReadFbx:
             else:
                 self.import_empty(objs, Global.getEnvRoot())
         Global.change_size(Global.getEnvRoot())
-        
+
         return True
-        
-    
+
+
     def convert_file(self, filepath):
         Global.store_ary(False) #Gets all objects before.
         basename = os.path.basename(filepath)
@@ -169,19 +178,19 @@ class ReadFbx:
             return ""
         rtn = [bpy.data.objects[n] for n in Global.now_ary if not n in Global.pst_ary]
         return rtn
-    
+
     #TODO: combine shared code with figure import
     def import_as_armature(self, objs, amtr):
-        
+
         Global.deselect()
         self.create_controller()
         vertex_group_names = []
         empty_objs = []
         amtr_objs = []
-        
+
         for i in range(3):
             amtr.scale[i] = 1
-            
+
         #Apply Armature Modifer if it does not exist
         for obj in objs:
             if obj.type == 'MESH':
@@ -198,10 +207,10 @@ class ReadFbx:
                 if obj.parent == amtr:
                     empty_objs.append(obj)
         Global.deselect()
-        
-        
 
-        #Apply rest pose        
+
+
+        #Apply rest pose
         Versions.select(amtr, True)
         Versions.active_object(amtr)
         Global.setOpsMode("POSE")
@@ -209,10 +218,10 @@ class ReadFbx:
         bpy.ops.pose.armature_apply(selected=False)
         bpy.ops.pose.select_all(action='DESELECT')
         Global.setOpsMode("EDIT")
-        
+
         hides = []
         bones = amtr.data.edit_bones
-        
+
         #Fix and Check Bones to Hide
         for bone in bones:
             to_hide = self.pose.set_bone_head_tail(bone)
@@ -223,7 +232,7 @@ class ReadFbx:
                 if self.is_child_bone(amtr, bone, vertex_group_names) == False:
                     hides.append(bone.name)
                     continue
-        
+
         Global.setOpsMode("OBJECT")
         for obj in objs:
             Versions.select(obj, True)
@@ -238,7 +247,7 @@ class ReadFbx:
 
         #Apply Custom Shape
         for pb in amtr.pose.bones:
-            
+
             binfo = self.pose.get_bone_limits_dict(pb.name)
             if binfo is None:
                 continue
@@ -257,7 +266,7 @@ class ReadFbx:
 
         #Restore Pose.
         # self.pose.restore_env_pose(amtr)
-    
+
     def create_controller(self):
         if 'daz_prop' in Util.colobjs('DAZ_HIDE'):
             return
@@ -273,7 +282,7 @@ class ReadFbx:
         bpy.context.object.name = 'daz_prop'
         Util.to_other_collection([bpy.context.object],'DAZ_HIDE',Util.cur_col_name())
 
-    
+
     def is_armature_modified(self,dobj):
         if dobj.type == 'MESH':
             for modifier in dobj.modifiers:
@@ -297,7 +306,7 @@ class ReadFbx:
             if bone.parent == vertex_groups:
                 rtn.append(bone.name)
         return rtn
-    
+
 
     def import_empty(self, objs, root):
         # Load an instance of the pose info
@@ -310,15 +319,11 @@ class ReadFbx:
             root.lock_location[i] = True
             root.lock_rotation[i] = True
             root.lock_scale[i] = True
-        Global.setOpsMode('OBJECT')    
+        Global.setOpsMode('OBJECT')
 
-    
+
     def setMaterial(self):
         self.dtb_shaders.make_dct()
         self.dtb_shaders.load_shader_nodes()
         for mesh in self.my_meshs:
             self.dtb_shaders.setup_materials(mesh)
-            
-
-
-    
