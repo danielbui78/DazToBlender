@@ -177,6 +177,10 @@ class ReadFbx:
         if len(Global.now_ary) == len(Global.pst_ary):
             return ""
         rtn = [bpy.data.objects[n] for n in Global.now_ary if not n in Global.pst_ary]
+        print("DEBUG: Environment.py, ReadFbx::new_objects()...")
+        for object in rtn:
+            print("    object=" + str(object))
+        print("DONE. (DEBUG: Environment.py, ReadFbx::new_objects())")
         return rtn
 
     #TODO: combine shared code with figure import
