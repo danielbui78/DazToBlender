@@ -3,3 +3,12 @@ venv
 __pycache__
 .vscode
 *.blend1
+.DS_Store
+Blender/.DS_Store
+Blender/appdata_common/.DS_Store
+Blender/appdata_common/Blender Foundation/.DS_Store
+Blender/appdata_common/Blender Foundation/Blender/.DS_Store
+Blender/appdata_common/Blender Foundation/Blender/BLENDER_VERSION/.DS_Store
+Blender/appdata_common/Blender Foundation/Blender/BLENDER_VERSION/scripts/.DS_Store
+Blender/appdata_common/Blender Foundation/Blender/BLENDER_VERSION/scripts/addons/.DS_Store
+Blender/appdata_common/Blender Foundation/Blender/BLENDER_VERSION/scripts/addons/DTB/.DS_Store
