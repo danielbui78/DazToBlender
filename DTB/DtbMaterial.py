@@ -230,6 +230,8 @@ class DtbShaders:
         self.mat_property_dict = {}
         # To deal with material names sometimes being undescriptive.
         for mat_property in mat_data["Properties"]:
+            if ("Name" not in mat_property or "Label" not in mat_property):
+                continue
             self.mat_property_dict[mat_property["Name"]] = mat_property
             self.mat_property_dict[mat_property["Label"]] = mat_property
         return self.mat_property_dict
