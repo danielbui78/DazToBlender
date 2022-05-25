@@ -230,8 +230,6 @@ class DtbShaders:
         self.mat_property_dict = {}
         # To deal with material names sometimes being undescriptive.
         for mat_property in mat_data["Properties"]:
-            if ("Name" not in mat_property or "Label" not in mat_property):
-                continue
             self.mat_property_dict[mat_property["Name"]] = mat_property
             self.mat_property_dict[mat_property["Label"]] = mat_property
         return self.mat_property_dict
@@ -278,34 +276,25 @@ class DtbShaders:
         else:
             return "DefaultMaterial"
 
-    def optimize_materials(self, mat_slot, sObjectName=""):
-        print("ENTER: DEBUG: DtbMaterial.py, optimize_materials()")
+    def optimize_materials(self, mat_slot):
         mat = mat_slot.material
         if "Genesis" in mat["Asset Name"]:
             mat_name = mat["Asset Label"] + "_" + mat["Material Name"]
         else:
             mat_name = mat["Asset Name"] + "_" + mat["Material Name"]
-        # check if mat_name is already in materials
-        mat_name += sObjectName;
         if mat_name not in bpy.data.materials:
             if mat["Asset Name"] != mat["Asset Label"]:
                 mat.name = mat["Asset Name"] + "_" + mat["Material Name"]
-                print("DEBUG: DtbMaterial.py, optimize_materials(): EXIT #1")
-                return False
+                return
             else:
-                print("DEBUG: DtbMaterial.py, optimize_materials(): EXIT #2")
-                return False
+                return
 
         material = bpy.data.materials[mat_name]
         if mat_name != mat.name:
             if mat["Asset Name"] == material["Asset Name"]:
                 mat_slot.material = material
                 bpy.data.materials.remove(mat)
-                print("DEBUG: DtbMaterial.py, optimize_materials(): EXIT #3")
                 return True
-
-        print("EXIT: DEBUG: DtbMaterial.py, optimize_materials()")
-        return False
 
     # TODO: Check for all Color Maps
     def check_map_type(self, property_key):
@@ -362,9 +351,8 @@ class DtbShaders:
         return color_rgb
 
     def setup_materials(self, obj):
-        print("DEBUG: DtbMaterial.py, DtbShaders::setup_materials(): materials...")
         for mat_slot in obj.material_slots:
-            print("    material_slot=" + str(mat_slot));
+
             mat = mat_slot.material
             mat_name = mat.name
 
@@ -378,12 +366,10 @@ class DtbShaders:
                 )
                 mat_slot.material = mat
             if obj_name not in self.mat_data_dict.keys():
-                print("    DEBUG: skip #1")
                 continue
             if mat_name not in self.mat_data_dict[obj_name].keys():
                 mat_name = mat.name.split(".")[0]
                 if mat_name not in self.mat_data_dict[obj_name].keys():
-                    print("    DEBUG: skip #2")
                     continue
 
             mat_data = self.mat_data_dict[obj_name][mat_name]
@@ -395,21 +381,17 @@ class DtbShaders:
 
             # Update Name
             new_name = mat["Asset Label"] + "_" + mat["Material Name"]
-            print("      new_name=" + str(new_name))
 
             if bpy.context.window_manager.combine_materials:
                 # To Deal with a duplicate being converted first.
                 if new_name in bpy.data.materials:
                     mat_slot.material = bpy.data.materials[new_name]
                     bpy.data.materials.remove(mat)
-                    print("      DEBUG: material removed: " + str(mat) + ", from " + str(obj.name))
-                    print("    DEBUG: skip #3")
                     continue
                 mat.name = new_name
                 mat_name = mat.name
                 # To Deal with duplications
-                if self.optimize_materials(mat_slot, str(obj.name)):
-                    print("    DEBUG: skip #4")
+                if self.optimize_materials(mat_slot):
                     continue
 
             mat.use_nodes = True
@@ -462,7 +444,6 @@ class DtbShaders:
 
                         if property_type == "Texture":
                             if os.path.exists(property_info):
-                                print("      property_info=" + str(property_info).strip() )
                                 self.check_map_type(property_key)
                                 tex_image_node = mat_nodes.new(
                                     type="ShaderNodeTexImage"
@@ -490,4 +471,3 @@ class DtbShaders:
 
             if mat_nodes is not None:
                 NodeArrange.toNodeArrange(mat_nodes)
-        print("DONE. (DtbMaterial.py, DtbShaders::setup_materials())")

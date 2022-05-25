@@ -149,17 +149,23 @@ class RENAME_MORPHS(bpy.types.Operator):
                 key.name = key.name.replace(string_to_replace, "")
         self.report({"INFO"}, "Morphs renamed!")
 
-        return {"FINISHED"}
+        return {"FINISHED"} 
 
 
 # End of Utlity Classes
 # Start of Import Classes
-class ImportFigureHelper:
-    sFbxPath = ""
-    dtu = None
+class IMP_OT_FBX(bpy.types.Operator):
+    """Supports Genesis 3, 8, and 8.1"""
 
-    def __init__(self):
-        return
+    bl_idname = "import.fbx"
+    bl_label = "Import New Genesis Figure"
+    bl_options = {"REGISTER", "UNDO"}
+    root = Global.getRootPath()
+
+    def invoke(self, context, event):
+        if bpy.data.is_dirty:
+            return context.window_manager.invoke_confirm(self, event)
+        return self.execute(context)
 
     def finish_obj(self):
         Versions.reverse_language()
@@ -183,16 +189,7 @@ class ImportFigureHelper:
     def pbar(self, v, wm):
         wm.progress_update(v)
 
-    def import_one(self, fbx_adr, arg_oDtu=None):
-        bReturnValue = False
-
-        if arg_oDtu is not None:
-            print("DEBUG: import_one(): arg_oDtu is not None")
-            self.dtu = arg_oDtu
-        else:
-            print("DEBUG: import_one(): arg_oDtu is None")
-            self.dtu = DataBase.DtuLoader()
-
+    def import_one(self, fbx_adr):
         Versions.active_object_none()
         Util.decideCurrentCollection("FIG")
         wm = bpy.context.window_manager
@@ -215,21 +212,7 @@ class ImportFigureHelper:
         self.pbar(10, wm)
         Global.load_dtu(dtu)
         Global.store_variables()
-        print("=================================================================")
-        print("_BODY=" + str(Global._BODY))
-        print("_AMTR=" + str(Global._AMTR))
-        print("=================================================================")
         self.pbar(15, wm)
-
-        if Global.getAmtr() is None:
-            print("DEBUG: DtbOperators.py: line 221: Global.getAmtr() is None!")
-            print("_BODY=" + str(Global._BODY))
-            print("_AMTR=" + str(Global._AMTR))
-
-        if Global.getBody() is None:
-            print("DEBUG: DtbOperators.py: line 224: Global.getBody() is None!")
-            print("_BODY=" + str(Global._BODY))
-            print("_AMTR=" + str(Global._AMTR))
 
         if Global.getAmtr() is not None and Global.getBody() is not None:
 
@@ -338,51 +321,18 @@ class ImportFigureHelper:
             DtbIKBones.ik_access_ban = False
             if bpy.context.window_manager.morph_prefix:
                 bpy.ops.rename.morphs('EXEC_DEFAULT')
-#            self.report({"INFO"}, "Success")
-            bReturnValue = True
+            self.report({"INFO"}, "Success")
         else:
             self.show_error()
-            bReturnValue = False
+
         wm.progress_end()
         DtbIKBones.ik_access_ban = False
-        return bReturnValue
-
-
-    def show_error(self):
-        Global.setOpsMode("OBJECT")
-#        for b in Util.myacobjs():
-#            bpy.data.objects.remove(b)
-        filepath = os.path.join(os.path.dirname(__file__), "img", "Error.fbx")
-        if os.path.exists(filepath):
-            bpy.ops.import_scene.fbx(filepath=filepath)
-            if Global.bNonInteractiveMode == 0:
-                bpy.context.space_data.shading.type = "SOLID"
-                bpy.context.space_data.shading.color_type = "TEXTURE"
-#        for b in Util.myacobjs():
-#            for i in range(3):
-#                b.scale[i] = 0.01
-
-
-
-class IMP_OT_FBX(bpy.types.Operator):
-    """Supports Genesis 3, 8, and 8.1"""
-
-    bl_idname = "import.fbx"
-    bl_label = "Import New Genesis Figure"
-    bl_options = {"REGISTER", "UNDO"}
-    root = Global.getRootPath()
-    helper = ImportFigureHelper()
-
-    def invoke(self, context, event):
-        if bpy.data.is_dirty:
-            return context.window_manager.invoke_confirm(self, event)
-        return self.execute(context)
 
     def execute(self, context):
         if self.root == "":
             self.report({"ERROR"}, "Appropriate FBX does not exist!")
             return {"FINISHED"}
-        self.helper.layGround()
+        self.layGround()
         current_dir = os.getcwd()
         if bpy.context.window_manager.use_custom_path:
             self.root = Global.get_custom_path()
@@ -396,12 +346,23 @@ class IMP_OT_FBX(bpy.types.Operator):
                 break
             Global.setHomeTown(os.path.join(self.root, "FIG/FIG" + str(i)))
             Global.load_asset_name()
-            if self.helper.import_one(fbx_adr):
-                self.report({"INFO"}, "Success")
-        self.helper.finish_obj()
+            self.import_one(fbx_adr)
+        self.finish_obj()
         os.chdir(current_dir)
         return {"FINISHED"}
 
+    def show_error(self):
+        Global.setOpsMode("OBJECT")
+        for b in Util.myacobjs():
+            bpy.data.objects.remove(b)
+        filepath = os.path.join(os.path.dirname(__file__), "img", "Error.fbx")
+        if os.path.exists(filepath):
+            bpy.ops.import_scene.fbx(filepath=filepath)
+            bpy.context.space_data.shading.type = "SOLID"
+            bpy.context.space_data.shading.color_type = "TEXTURE"
+        for b in Util.myacobjs():
+            for i in range(3):
+                b.scale[i] = 0.01
 
 
 class IMP_OT_ENV(bpy.types.Operator):

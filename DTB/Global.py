@@ -7,8 +7,6 @@ from . import DataBase
 from . import Versions
 from . import Util
 
-bNonInteractiveMode = 0
-
 isMan = False
 root = ""
 isGen = False
@@ -1240,8 +1238,6 @@ def float_by_size(float):
 
 
 def scale_settings():
-    if (bNonInteractiveMode != 0):
-        return
     scene = bpy.context.scene
     scene.tool_settings.use_keyframe_insert_auto = False
     scene.unit_settings.system = "METRIC"
